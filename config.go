@@ -1,12 +1,15 @@
 package config
 
 import (
+	"errors"
 	"log"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
 )
+
+var ErrMissingSecretKey = errors.New("config: SECRET_KEY is not set")
 
 type Config struct {
 	Addr      string
@@ -29,6 +32,14 @@ func New(opts ...func(*Config)) *Config {
 	}
 
 	return cfg
+}
+
+// kept out of New to keep its signature; an empty key makes HS256 tokens forgeable
+func (c *Config) Validate() error {
+	if len(c.SecretKey) == 0 {
+		return ErrMissingSecretKey
+	}
+	return nil
 }
 
 func WithDatabaseConfig(cfg *DatabaseConfig) func(c *Config) {
