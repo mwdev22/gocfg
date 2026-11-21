@@ -1,18 +1,19 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"testing"
 )
 
 func TestNew(t *testing.T) {
 	tests := []struct {
-		name      string
-		envVars   map[string]string
-		opts      []func(*Config)
-		wantAddr  string
-		wantKey   string
-		wantDB    *DatabaseConfig
+		name     string
+		envVars  map[string]string
+		opts     []func(*Config)
+		wantAddr string
+		wantKey  string
+		wantDB   *DatabaseConfig
 	}{
 		{
 			name:     "default values when no env vars",
@@ -104,6 +105,32 @@ func TestNew(t *testing.T) {
 						t.Errorf("New().Database.MaxOpenConns = %v, want %v", cfg.Database.MaxOpenConns, tt.wantDB.MaxOpenConns)
 					}
 				}
+			}
+		})
+	}
+}
+
+func TestConfig_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		envVars map[string]string
+		wantErr error
+	}{
+		{name: "secret key set", envVars: map[string]string{"SECRET_KEY": "topsecret"}, wantErr: nil},
+		{name: "secret key missing", envVars: map[string]string{}, wantErr: ErrMissingSecretKey},
+		{name: "secret key empty", envVars: map[string]string{"SECRET_KEY": ""}, wantErr: ErrMissingSecretKey},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Clearenv()
+			for key, value := range tt.envVars {
+				os.Setenv(key, value)
+			}
+
+			err := New().Validate()
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("Validate() = %v, want %v", err, tt.wantErr)
 			}
 		})
 	}
