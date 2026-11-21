@@ -34,7 +34,6 @@ func New(opts ...func(*Config)) *Config {
 	return cfg
 }
 
-// kept out of New to keep its signature; an empty key makes HS256 tokens forgeable
 func (c *Config) Validate() error {
 	if len(c.SecretKey) == 0 {
 		return ErrMissingSecretKey
